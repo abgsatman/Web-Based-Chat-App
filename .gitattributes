@@ -1,0 +1,3 @@
+directory/to/ignore/* linguist-vendored
+.somextensiontoignore linguist-vendored
+*.js linguist-language=Node.JS
