@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<head>
+<title>Nodejs Chat Örneği</title>
+<meta name="author" content="">
+<link rel="stylesheet" type="text/css" href="css/style.css" />
+<script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script src="zaman.js"></script>       
+<script type="text/javascript">
+	$(document).ready(function(){
+		
+	window.ses = document.getElementById("ses");
+	
+	function Oynat() {
+		ses.play();
+		ses.loop = false;
+		ses.volume = 0.1;
+	}            
+	
+	var sahip = "";
+	
+	var socket = io.connect("http://localhost.com:3000");
+	
+	$("#mesajGonder").click(function(){
+		var mesaj = $("#mesajinput").val();
+		var nick = $("#nickinput").val();
+		if (!mesaj){
+			return;
+		}
+		socket.emit('mesajgonder',{
+			'mesaj' : mesaj,
+			'uid' : nick,
+			'zaman': zamanFonk()
+		});
+		$("#mesajinput").val("");		
+	});
+	
+	socket.on("mesajgitti", function(data){
+		if(data.uid != $("#nickinput").val()) {
+			Oynat();
+			sahip = " style='background-color: #efefef;'";
+		}
+		else {
+			sahip = " style='background-color:#e5e3e3;'";
+		}
+		$("#yazismalar").prepend("<li"+sahip+">(" + data.zaman + ") <b>" +  data.uid + "</b> :"  + 
+		data.mesaj
+		.replace(':D', '<img src=ses/smiley.png width=18>')
+		.replace(':(', '<img src=ses/sad.png width=18>')
+		.replace(':p', '<img src=ses/dil.png width=18>')
+		.replace(';)', '<img src=ses/kirp.png width=18>') + "</li>");
+		$("#t").html("");
+	});
+	
+	socket.emit('users');
+	
+	socket.on('getuser', function(data) {
+	//socket.disconnect();
+	$("#tks").html("Toplam Kullanıcı: " + data.usercount);
+	//socket.disconnect();
+	});
+	
+	$('#mesajinput').keyup(function(e){
+		if(e.keyCode == 13) {
+			var mesaj = $("#mesajinput").val();
+			var nick = $("#nickinput").val();
+			if (!mesaj){
+				return;
+			}
+			socket.emit('mesajgonder',{
+				'mesaj' : mesaj,
+				'uid' : nick,
+				'zaman' : zamanFonk()
+			});
+			$("#mesajinput").val("");
+		}
+	}); 
+	
+	$("#mesajinput").keypress(function(data){
+		var nick = $("#nickinput").val();
+		socket.emit('typing',{
+			'uid' : nick
+		});
+		$("#t").html(data.uid + " is typing...");
+	});
+	socket.on("typed", function(data){
+		$("#t").html(data.uid + " is typing...");
+	});
+	$("#mesajinput").keydown(function(data){
+		setTimeout(function() {
+			$("#t").html("");
+		}, 3000)
+	});
+	socket.on("typed", function(data){
+		setTimeout(function() {
+			$("#t").html("");
+		}, 3000)
+	});
+});
+</script>
+</head>
+<body>
+<style>
+ul {list-style-type: none; margin-left: -20px; }
+#tks { padding:5px; margin:5px;} 
+</style>
+<audio controls id="ses" style="width:0px; height:0px;">
+    <source src="ses/message.mp3" loop="false" preload="false">
+</audio>
+<div class="chatsite">
+    <div class="form-kapsa">
+        <table>
+        <tr>
+            <td><input type="text" id="nickinput" placeholder="Nick Giriniz"></input></td>
+            <td><div id="t"></div></td>
+        </tr>
+        <tr>
+            <td><textarea id="mesajinput"></textarea></td>
+            <td><button id="mesajGonder">Gönder</button></td>
+        </tr>
+        </table>   
+    </div>
+    <div id="tks">Loading...</div>
+    <div class="mesaj-kapsa">
+        <h3>Mesajlar</h3>
+        <ul id="yazismalar"></ul>
+    </div>
+</div>
+</body>
+</html>
